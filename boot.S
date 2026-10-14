@@ -26,24 +26,17 @@ _start:
     sub w2, w2, #1
     cbnz w2, 3b // Loop if non-zero
 
-    // Jump to our main() routine in C (make sure it doesn't return)
 4:
-    bl uart_init
-    adrp x0, message
-    add x0, x0, :lo12:message
-    bl uart_writeText
-    // In case it does return, halt the master core too
-    // b 1b
+    bl uart_init // init uart
+    bl run // run code
 
+5:
     mov w0, #0x18 // SYS_EXIT
     adrp x1, exit_args
     add x1, x1, :lo12:exit_args
     hlt #0xf000
 
-.section ".rodata"
-message:
-    .asciz "Hello, assembly's a real bitch!\n"
-
+.section ".rodata" // Read Only Data
 .balign 8
 exit_args:
     .quad 0x20026 // Normal application exit

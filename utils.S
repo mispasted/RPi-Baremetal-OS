@@ -1,0 +1,130 @@
+.global run
+run:
+// Allocate the Stack
+    str lr, [sp, #-8]!
+
+// write "output: "
+    adrp x0, output 
+    add x0, x0, :lo12:output
+    bl uart_writeText
+
+// Test Code
+    movz w9, #0x8F
+    sub sp, sp, #1
+    strb w9, [sp]
+    ldrsb w0, [sp]
+    add sp, sp, #1
+
+// Printing (Will print x0)
+    mov x1, #8 //  Number of Bytes to Encode/Print
+    bl reg_to_ascii 
+
+// newline
+    adrp x0, newline
+    add x0, x0, :lo12:newline
+    bl uart_writeText
+
+// return
+// Deallocated the Stack
+    ldr lr, [sp], #8 
+    ret
+
+
+// This procedure takes the register x0, and treats it's
+// contents as a x1 * 1-byte value. Meaning, x1 contains the
+// number of bytes to be decoded to ascii.
+// Each set of 4 bits will be converted to an ascii character, and 
+// printed via UART.
+// Arguments:
+//  x0 - The register to encode in ascii
+//  x1 - The number of bytes to encode. (min 1, max 8)
+// Returns:
+reg_to_ascii:
+    // Allocate Stack
+    stp lr, x28, [sp, #-16]!
+    
+    // Load the Address
+    adrp x28, array
+    add x28, x28, :lo12:array
+    mov x8, x28
+     
+    // store "0x" at the beginning of string
+    mov w9, #'0' // store ascii value for '0'
+    strb w9, [x8]
+    mov w9, #'x' // store ascii value for 'x'
+    strb w9, [x8, #1]
+
+    // Compute the final address
+    // x8 + 2(bytes) + x1 * 2 - 1 OR x9 = x8 + 1 + (x1 * 2)
+    lsl x10, x1, #1 // multipy x1 by two, store in x10
+    add x8, x8, #2  // x8 = x8 + 2 
+    add x9, x8, x10 // x9 = x8 + (x1 * 2) //x9 = first write location
+
+    mov w10, #0 // This will be null
+    strb w10, [x9]// Store the null
+    sub x9, x9, #1 // x9--; x9 =  second write location
+
+rta_loop:
+// Registers:
+// x0 - register to encode
+// x9 - write-to location
+// x8 - last write location 
+// w11 - 4 bit cleaned value/then ascii
+    and x11, x0, #0xf
+    subs wzr, w11, #10 // subtraction and set NZCV bit
+    b.ge rta_greater_than_equal_10
+
+rta_less_than_10:
+    add w11, w11, #'0' // Adding 48/'0' gives the ascii value for this range
+    b rta_loop_continue // don't perfrom steps for >= 10
+
+rta_greater_than_equal_10:
+    add w11, w11, #55 // Adding 55/('A' - 10)  gives ascii value for this range
+    // continue
+
+rta_loop_continue:
+    strb w11, [x9]// store the calculated ascii value
+    lsr x0, x0, #4 //shift the encode-ee by four bits.
+    sub x9, x9, #1 // subtract one from address
+    cmp x9, x8 // Compare if the address is one we shouldn't go into.
+    b.ge rta_loop
+    // Don't loop if x9 < x8 
+
+// Finish procedure:
+    mov x0, x28 // The start address of array 
+    bl uart_writeText
+
+    // Deallocate Stack
+    ldp lr, x28, [sp], #16
+    ret
+
+sadd16: 
+    SXTH W8, W1 
+    ADD W0, W8, W0, SXTH 
+    RET
+
+uadd16: 
+    AND W8, W1, #0xffff 
+    ADD W0, W8, W0, UXTH 
+    RET
+
+sadd32: 
+    ADD W0, W1, W0 
+    RET
+
+
+.section ".rodata" // Read Only Data
+output:
+    .asciz "output: "
+
+newline:
+    .asciz "\n"
+
+.section ".data" // Data that is initialized
+array:
+    .fill 65, 1, 0xFF
+    // .fill repeat, size, value
+
+.section ".bss" // Data that begins as zero
+reg_to_ascii_array:
+    .space 20 
