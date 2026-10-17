@@ -1,8 +1,3 @@
-/boot.o
-/kernel.o
-/kernel8.elf
-/kernel8.img
-/start4.elf
-/fixup4.dat
-/utils.o
-/io.o
+/*.o
+/*.elf
+/*.img

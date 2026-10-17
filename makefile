@@ -5,8 +5,11 @@ OFILES := $(OFILES:.S=.o)
 GCCFLAGS = -Wall -O0 -ffreestanding -nostdinc -nostdlib -nostartfiles -g
 GCCPATH = aarch64-none-elf-gcc
 Q=""
+TFTPDIR = /tftpboot
 
-all: clean kernel8.img
+.PHONY: all clean firmware
+
+all: clean kernel8.img 
 
 %.o: %.S
 	aarch64-none-elf-gcc $(GCCFLAGS) -c $< -o $@
@@ -14,11 +17,10 @@ all: clean kernel8.img
 %.o: %.c
 	aarch64-none-elf-gcc $(GCCFLAGS) -c $< -o $@
 
-kernel8.img: $(OFILES) config.txt start4.elf fixup4.dat
+kernel8.img: $(OFILES) firmware
 	aarch64-none-elf-ld -nostdlib $(OFILES) -T link.ld -o kernel8.elf
 	aarch64-none-elf-objcopy -O binary kernel8.elf kernel8.img
 	cp kernel8.img /tftpboot
-	chmod 777 /tftpboot/kernel8.img
 
 clean:
 	/bin/rm kernel8.elf *.o *.img > /dev/null 2> /dev/null || true
@@ -36,19 +38,21 @@ gdb: kernel8.elf
 	@echo "[GDB]     running with $<"
 	${Q}gdb -ex "target remote :1234" $<
 
+firmware: config.txt $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat $(TFTPDIR)/bcm2711-rpi-4-b.dtb
+
 config.txt:
 	cp config.txt /tftpboot
-	chmod 777 /tftpboot/config.txt
 
-start4.elf: 
-	wget https://github.com/raspberrypi/firmware/blob/master/boot/start4.elf
-	cp start4.elf /tftpboot
-	chmod 777 /tftpboot/start4.elf
+$(TFTPDIR)/start4.elf: 
+	wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf
+	mv start4.elf $(TFTPDIR)
 	
-fixup4.dat: 
-	wget https://github.com/raspberrypi/firmware/blob/master/boot/fixup4.dat
-	cp fixup4.dat /tftpboot
-	chmod 777 /tftpboot/fixup4.dat
+$(TFTPDIR)/fixup4.dat: 
+	wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup4.dat
+	mv fixup4.dat $(TFTPDIR)
 
+$(TFTPDIR)/bcm2711-rpi-4-b.dtb:
+	wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb
+	mv bcm2711-rpi-4-b.dtb $(TFTPDIR)
 
 
