@@ -38,10 +38,10 @@ gdb: kernel8.elf
 	@echo "[GDB]     running with $<"
 	${Q}gdb -ex "target remote :1234" $<
 
-firmware: config.txt $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat $(TFTPDIR)/bcm2711-rpi-4-b.dtb
+firmware: boot-config.txt $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat $(TFTPDIR)/bcm2711-rpi-4-b.dtb
 
-config.txt:
-	cp config.txt /tftpboot
+boot-config.txt:
+	cp boot-config.txt /tftpboot/config.txt
 
 $(TFTPDIR)/start4.elf: 
 	wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf
