@@ -8,16 +8,16 @@ run:
     add x0, x0, :lo12:output
     bl uart_writeText
 
-// Test Code
-    movz w9, #0x8F
-    sub sp, sp, #1
-    strb w9, [sp]
-    ldrsb w0, [sp]
-    add sp, sp, #1
+// write greeting
+    adrp x0, greeting 
+    add x0, x0, :lo12:greeting
+    bl uart_writeText
 
+// Test Code
+    
 // Printing (Will print x0)
-    mov x1, #8 //  Number of Bytes to Encode/Print
-    bl reg_to_ascii 
+    // mov x1, #8 //  Number of Bytes to Encode/Print
+    // bl reg_to_ascii 
 
 // newline
     adrp x0, newline
@@ -116,6 +116,9 @@ sadd32:
 .section ".rodata" // Read Only Data
 output:
     .asciz "output: "
+
+greeting:
+    .ascii "Dang dog, now that's pretty sick! Hol' up!"
 
 newline:
     .asciz "\n"
