@@ -3,10 +3,7 @@ run:
 // Allocate the Stack
     str lr, [sp, #-8]!
 
-// write "output: "
-    adrp x0, output 
-    add x0, x0, :lo12:output
-    bl uart_writeText
+
 
 // write greeting
     adrp x0, greeting 
@@ -14,20 +11,25 @@ run:
     bl uart_writeText
 
 // Test Code
+
+    movz x9, 0x0010
+    movk x9, 0x0000, lsl #16
+    movk x9, 0x0000, lsl #32
+    movk x9, 0x0000, lsl #48
+
+    mov x10, 0xC0DE
+
+    str x10, [x9]
+    ldr x11, [x9]
+    mov x0, x11
     
-// Printing (Will print x0)
-    // mov x1, #8 //  Number of Bytes to Encode/Print
-    // bl reg_to_ascii 
+// Printing (Will print "Output: <Value in x0>)
+    mov x1, #8 //  Number of Bytes to Encode/Print
+    bl reg_to_ascii 
 
-// newline
-    adrp x0, newline
-    add x0, x0, :lo12:newline
-    bl uart_writeText
-
-// return
 // Deallocated the Stack
     ldr lr, [sp], #8 
-    ret
+    ret // return, very important to do that.
 
 
 // This procedure takes the register x0, and treats it's
@@ -91,8 +93,17 @@ rta_loop_continue:
     // Don't loop if x9 < x8 
 
 // Finish procedure:
-    mov x0, x28 // The start address of array 
+    adrp x0, output  // Write "Output: "
+    add x0, x0, :lo12:output
     bl uart_writeText
+
+    mov x0, x28 // The start address of array 
+    bl uart_writeText // Write "0x....."
+    
+    adrp x0, newline // Write a Newline Character
+    add x0, x0, :lo12:newline
+    bl uart_writeText
+
 
     // Deallocate Stack
     ldp lr, x28, [sp], #16
@@ -118,7 +129,7 @@ output:
     .asciz "output: "
 
 greeting:
-    .ascii "Dang dog, now that's pretty sick! Hol' up!"
+    .ascii "You've Booted Up! Congrats from the Baremetal! Christine is a Real Cutie\n"
 
 newline:
     .asciz "\n"
