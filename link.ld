@@ -12,6 +12,17 @@ SECTIONS
         *(COMMON)
         __bss_end = .;
     }
+
+    . = ALIGN(16);
+    __stack_bottom = .;
+    . += 0x4000;          /* 16 KiB */
+    __stack_top = .;
+
+    . = ALIGN(16);
+    __data_bottom = .;
+    . += 0x4000;          /* 16 KiB */
+    __data_top = .;
+
     _end = .;
 
    /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }

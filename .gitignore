@@ -1,3 +1,5 @@
 /*.o
-/*.elf
+/*.elf*
 /*.img
+/*.dtb*
+/*.dat

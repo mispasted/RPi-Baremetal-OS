@@ -14,7 +14,8 @@ ifeq ($(PLATFORM),qemu) # No additional firmware files, and don't need copied to
 	FIRMWARE :=
 else ifeq ($(PLATFORM),rpi) # Only download and copy files to $TFTPDIR if it's for the physical rpi
 	ASM_SRCS := $(ASM_SRCS) platform_rpi.S
-	FIRMWARE := boot-config $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat $(TFTPDIR)/bcm2711-rpi-4-b.dtb
+	FIRMWARE := boot-config $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat \
+		$(TFTPDIR)/bcm2711-rpi-4-b.dtb $(TFTPDIR)/kernel8.img
 endif
 
 FILES := $(wildcard *.c) $(ASM_SRCS)
@@ -26,7 +27,7 @@ GCCPATH = aarch64-none-elf-gcc
 
 .PHONY: all clean firmware boot-config
 
-all: clean kernel8.img 
+all: clean kernel8.img $(FIRMWARE) 
 
 %.o: %.S
 	${Q}aarch64-none-elf-gcc $(GCCFLAGS) -c $< -o $@
@@ -34,17 +35,24 @@ all: clean kernel8.img
 %.o: %.c
 	${Q}aarch64-none-elf-gcc $(GCCFLAGS) -c $< -o $@
 
-kernel8.img: $(OFILES) firmware
+kernel8.img: $(OFILES)
 	${Q}aarch64-none-elf-ld -nostdlib $(OFILES) -T link.ld -o kernel8.elf
 	${Q}aarch64-none-elf-objcopy -O binary kernel8.elf kernel8.img
-	${Q}cp kernel8.img /tftpboot
 
 clean:
-	${Q}/bin/rm fixup4.dat bcm2711-rpi-4-b.dtb *.elf *.o *.img > /dev/null 2> /dev/null || true
+	${Q}/bin/rm *.o *.img /tftboot/* /tftboot/config.txt > /dev/null 2> /dev/null || true
 
-run: kernel8.img
-	@qemu-system-aarch64 -M raspi4b -display none -serial null -serial \
+clean-all:
+	${Q}/bin/rm fixup4.dat /tftpboot/* bcm2711-rpi-4-b.dtb* *.elf* *.o *.img > /dev/null 2> /dev/null || true
+
+run: all $(PLATFORM)-run
+
+qemu-run:
+	${Q}qemu-system-aarch64 -M raspi4b -display none -serial null -serial \
 	mon:stdio -kernel kernel8.img -semihosting-config enable=on,target=native
+
+rpi-run:
+	picocom -b 115200 /dev/ttyUSB0
 
 qemu: kernel8.img
 	@echo "[QEMU] running with $<"
@@ -56,21 +64,20 @@ gdb: kernel8.elf
 	@echo "[GDB]     running with $<"
 	${Q}gdb -ex "target remote :1234" $<
 
-firmware: $(FIRMWARE) 
 
+# --- $(FIRMWARE) derivations for physical RPI---
 boot-config: boot-config.txt
 	${Q}cp boot-config.txt /tftpboot/config.txt
 
 $(TFTPDIR)/start4.elf: 
-	${Q}wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf
-	${Q}cp start4.elf $(TFTPDIR)
+	${Q}wget -O $@ https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf
 	
 $(TFTPDIR)/fixup4.dat: 
-	${Q}wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup4.dat
-	${Q}cp fixup4.dat $(TFTPDIR)
+	${Q}wget -O $@ https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup4.dat
 
 $(TFTPDIR)/bcm2711-rpi-4-b.dtb:
-	${Q}wget https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb
-	${Q}cp bcm2711-rpi-4-b.dtb $(TFTPDIR)
+	${Q}wget -O $@ https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb
 
+$(TFTPDIR)/kernel8.img: kernel8.img
+	${Q}cp $< $@ 
 

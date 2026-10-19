@@ -1,1 +1,7 @@
+dtoverlay=disable-bt
+arm_64bit=1
 kernel=kernel8.img
+enable_uart=1
+kernel_address=0x80000
+init_uart_clock=48000000
+arm_peri_high=1
