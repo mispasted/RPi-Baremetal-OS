@@ -5,8 +5,24 @@ and methods in gpio_utils.c
 
 */
 
-#ifndef gpio_utils_h
-#define gpio_utils_h
+#ifndef GPIO_UTILS_H 
+#define GPIO_UTILS_H 
+
+#if defined(PLATFORM_QEMU)
+
+#define GPIO_BASE_ADDR 0xFE200000
+#define UART_BASE_ADDR 0xFE201000
+
+#elif defined(PLATFORM_RPI)
+
+#define GPIO_BASE_ADDR 0x47E200000
+#define UART_BASE_ADDR 0x47E201000
+
+#else
+#error "Pass -DPLATFORM_QEMU or -DPLATFORM_RPI"
+#endif
+
+#ifndef __ASSEMBLER__
 
 #include "types.h"
 
@@ -39,4 +55,5 @@ void sleep_ms(uint64_t milliseconds);
 // Linker data space
 extern uintptr_t __data_bottom[];
 
-#endif
+#endif // __ASSEMBLER__
+#endif // GPIO_UTILS_H

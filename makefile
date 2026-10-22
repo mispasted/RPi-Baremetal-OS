@@ -3,6 +3,9 @@ PLATFORM ?= qemu
 # Directory for tftp boot (files are copied there)
 TFTPDIR:=/tftpboot
 
+GCCFLAGS = -Wall -O0 -ffreestanding -nostdinc -nostdlib -nostartfiles -g
+GCCPATH = aarch64-none-elf-gcc
+
 # Quiet
 Q ?= @ 
 
@@ -12,18 +15,21 @@ ASM_SRCS := $(filter-out $(PLATFORM_ASM),$(wildcard *.S))
 ifeq ($(PLATFORM),qemu) # No additional firmware files, and don't need copied to the $TFTPDIR
 	ASM_SRCS := $(ASM_SRCS) platform_qemu.S
 	FIRMWARE :=
+	GCCFLAGS += -DPLATFORM_QEMU
 else ifeq ($(PLATFORM),rpi) # Only download and copy files to $TFTPDIR if it's for the physical rpi
 	ASM_SRCS := $(ASM_SRCS) platform_rpi.S
 	FIRMWARE := boot-config $(TFTPDIR)/start4.elf $(TFTPDIR)/fixup4.dat \
 		$(TFTPDIR)/bcm2711-rpi-4-b.dtb $(TFTPDIR)/kernel8.img
+	GCCFLAGS += -DPLATFORM_RPI
+
+else:
+	$(error PLATFORM must be qemu or rpi)
 endif
 
 FILES := $(wildcard *.c) $(ASM_SRCS)
 OFILES := $(FILES:.c=.o)
 OFILES := $(OFILES:.S=.o)
 
-GCCFLAGS = -Wall -O0 -ffreestanding -nostdinc -nostdlib -nostartfiles -g
-GCCPATH = aarch64-none-elf-gcc
 
 .PHONY: all clean firmware boot-config
 
@@ -48,8 +54,12 @@ clean-all:
 run: all $(PLATFORM)-run
 
 qemu-run:
-	${Q}qemu-system-aarch64 -M raspi4b -display none -serial null -serial \
-	mon:stdio -kernel kernel8.img -semihosting-config enable=on,target=native
+	${Q}qemu-system-aarch64 \
+	-M raspi4b \
+	-display none \
+	-serial mon:stdio \
+	-kernel kernel8.img \
+	-semihosting-config enable=on,target=native
 
 rpi-run:
 	picocom -b 115200 /dev/ttyUSB0

@@ -15,7 +15,7 @@ kernel=kernel8.img
 enable_uart=1
 kernel_address=0x80000
 init_uart_clock=48000000
-arm_peri_high=
+arm_peri_high=1
 ```
 
 Applicable references: 
@@ -30,8 +30,10 @@ Applicable references:
 // The Following section defines important Register locations. 
 // The base addresses assume "high peripheral mode"
 // These addresses were found in the peripheral manual
-.set GPIO_BASE_ADDR, 0x47E200000
-.set UART_BASE_ADDR, 0x47E201000
+// When compiling for Physical RPi:
+//GPIO_BASE_ADDR = 0x47E200000
+//UART_BASE_ADDR = 0x47E201000
+#include "gpio_utils.h"
 
 // GPIO Alternate Function Selector
 // Will need for setting FSEL for GPIO 14 and 15, which 
@@ -133,6 +135,7 @@ wait_for_tx_rx_complete:
     // - Enable a word length of 8 bits (a byte): set 6:5 to 0b11
     // - Enable the FIFO's: set 4 to 0b1 (This is the FEN bit)
     // NOTE: I found by trial and error that FIFOs can only be enabled just prior to setting UARTEN
+    // else the PL011 simply doesn't transmit.
     ldr x9, =LCRH
     ldr w10, =((0b11 << 5) | 0b1 << 4)     // =0b0111_0000; Enable FIFOS with desired settings
     str w10, [x9]
@@ -383,14 +386,3 @@ rta_loop_continue:
 array:
     .fill 65, 1, 0xFF
     // .fill repeat, size, value
-
-
-
-
-
-
-
-
-
-
-

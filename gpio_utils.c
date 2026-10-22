@@ -1,7 +1,6 @@
 #include "gpio_utils.h"
 #include "uart1.h"
 
-
 void uart_puts(char *char_ptr)
 {
     for(; *char_ptr != '\0' ; char_ptr++)

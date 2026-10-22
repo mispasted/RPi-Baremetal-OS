@@ -34,9 +34,3 @@ exit:
     b platform_exit
 
 .section ".rodata"
-greeting:
-    .asciz "You've Booted Up! Congrats from the Baremetal! Christine is a Real Cutie <3!\n"
-checkpoint:
-    .asciz "Checkpoint. \n"
-complete:
-    .asciz "Complete. \n"

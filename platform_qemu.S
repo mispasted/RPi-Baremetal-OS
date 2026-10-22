@@ -4,7 +4,7 @@ platform_exit:
 
     adrp x0, exit_message // Print exit message
     add x0, x0, :lo12:exit_message
-    bl uart_writeText
+    bl uart_puts
 
     mov w0, #0x18 // SYS_EXIT
     adrp x1, exit_args
@@ -19,4 +19,4 @@ exit_args:
     .quad 0 // Exit status
 
 exit_message:
-    .asciz "Entering 'Shutdown' State (platform is qemu).\n"
+    .asciz "[platfrom_qemu.S] Entering 'Shutdown' State (platform is qemu).\n"
