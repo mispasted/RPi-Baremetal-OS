@@ -5,10 +5,11 @@ Useful references:
 - [Baremetal RPI guide](https://rpi4os.com/part1-bootstrapping/)
 
 Dependencies:
-- The Aarch64 GCC build toolchain.
+- The Aarch64 GNU build toolchain.
     - `aarch64-none-elf-gcc`
     - `aarch64-none-elf-ld`
     - `aarch64-none-elf-objcopy`
+    - `aarch64-none-elf-as`
 - `qemu-system-aarch64`
 - `gnumake`
 
